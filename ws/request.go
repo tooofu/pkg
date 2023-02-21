@@ -94,4 +94,5 @@ func ReadRequest(br *bufio.Reader) (r *Request, err error) {
 	if r.Header, err = r.readMIMEHeader(); err != nil {
 		return
 	}
+	return
 }

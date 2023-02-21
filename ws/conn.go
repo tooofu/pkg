@@ -73,26 +73,27 @@ func (c *Conn) WriteBody(msg []byte) (err error) {
 
 func (c *Conn) ReadMessage() (op int, payload []byte, err error) {
 	var (
-		fin         bool
-		finOp, n    int
-		partPayload []byte
+	// fin         bool
+	// finOp, n    int
+	// partPayload []byte
 	)
 
-	for {
-		// read frame
-		if fin, op, partPayload, err = c.readFrame(); err != nil {
+	// for {
+	//     // read frame
+	//     if fin, op, partPayload, err = c.readFrame(); err != nil {
 
-		}
-	}
+	//     }
+	// }
+	return
 }
 
 func (c *Conn) readFrame() (fin bool, op int, payload []byte, err error) {
 	var (
-		b          byte
-		p          []byte
-		mask       bool
-		maskKey    []byte
-		payloadLen int64
+		b byte
+		// p          []byte
+		// mask       bool
+		// maskKey    []byte
+		// payloadLen int64
 	)
 	// 1. First byte
 	if b, err = c.Reader.ReadByte(); err != nil {
