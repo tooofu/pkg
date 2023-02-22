@@ -1,4 +1,4 @@
-module github.com/tooofu/pkg
+module pkg
 
 go 1.17
 
