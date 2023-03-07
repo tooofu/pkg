@@ -27,6 +27,11 @@ type Worker struct {
 	Size int
 }
 
+// JaegerServer options
+type JaegerServer struct {
+	Addr string
+}
+
 // RPCServer options
 type RPCServer struct {
 	Addr    string
