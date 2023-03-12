@@ -10,6 +10,17 @@ type HTTPServer struct {
 	Timeout time.Duration
 }
 
+type HTTPClient struct {
+	MaxIdleConn int
+	IdleTimeout time.Duration
+	Compress    bool
+	Verify      bool
+}
+
+type EndpointUri struct {
+	Addr string
+}
+
 // Memcache options
 type Memcache struct {
 	Addrs  []string
