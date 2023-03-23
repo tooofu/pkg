@@ -7,18 +7,20 @@ import (
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	otgrpc "github.com/opentracing-contrib/go-grpc"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/keepalive"
 )
 
-// 1. grpcServerKeepAliveTime < grpcClientKeepAliveTime
-//		rpcSvr 主动发起 ping
-// 2. grpcMaxConnectionIdle > grpcServerKeepAliveTime * 3
-//		TODO idle > ping 间隔 * 3, ping 一次超时不应该直接 goaway
-// 3. grpcMaxConnectionAge
-//		NOTE 一个 conn 使用最长时间, emmmm. 这个意义?
+//  1. grpcServerKeepAliveTime < grpcClientKeepAliveTime
+//     rpcSvr 主动发起 ping
+//  2. grpcMaxConnectionIdle > grpcServerKeepAliveTime * 3
+//     TODO idle > ping 间隔 * 3, ping 一次超时不应该直接 goaway
+//  3. grpcMaxConnectionAge
+//     NOTE 一个 conn 使用最长时间, emmmm. 这个意义?
 const (
 	grpcMaxConnectionIdle      = time.Second * 600
 	grpcMaxConnectionAge       = time.Second * 3600
@@ -47,6 +49,25 @@ var (
 	})
 )
 
+type svrOptions struct {
+	log *logrus.Logger
+	tr  opentracing.Tracer
+}
+
+type ServerOptions func(*svrOptions)
+
+// func ServerLogger(log *logrus.Logger) ServerOptions {
+//     return func(options *svrOptions) {
+//         options.log = log
+//     }
+// }
+
+func ServerTracer(tr opentracing.Tracer) ServerOptions {
+	return func(options *svrOptions) {
+		options.tr = tr
+	}
+}
+
 func recoveryInterceptor() grpc_recovery.Option {
 	return grpc_recovery.WithRecoveryHandler(func(p interface{}) (err error) {
 		return grpc.Errorf(codes.Unknown, "panic triggered=%v", p)
@@ -61,7 +82,12 @@ func logLevel(code codes.Code) logrus.Level {
 }
 
 // InitServer init server
-func InitServer(log *logrus.Logger) *grpc.Server {
+func InitServer(log *logrus.Logger, options ...ServerOptions) *grpc.Server {
+	opts := svrOptions{}
+	for _, opt := range options {
+		opt(&opts)
+	}
+
 	// log
 	logrusEntry := logrus.NewEntry(log)
 	logOpts := []grpc_logrus.Option{
@@ -80,6 +106,19 @@ func InitServer(log *logrus.Logger) *grpc.Server {
 		// grpc_ctxtags.UnaryServerInterceptor(ctxOpts...),
 		// log
 		grpc_logrus.UnaryServerInterceptor(logrusEntry, logOpts...),
+		// // recovery
+		// grpc_recovery.UnaryServerInterceptor(recoveryInterceptor()),
+	)
+
+	if opts.tr != nil {
+		interceptors = grpc_middleware.ChainUnaryServer(
+			interceptors,
+			otgrpc.OpenTracingServerInterceptor(opts.tr),
+		)
+	}
+
+	interceptors = grpc_middleware.ChainUnaryServer(
+		interceptors,
 		// recovery
 		grpc_recovery.UnaryServerInterceptor(recoveryInterceptor()),
 	)
