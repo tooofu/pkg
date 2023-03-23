@@ -38,3 +38,15 @@ type RPCClient struct {
 	Addr    string
 	Timeout time.Duration
 }
+
+// KafkaServer options
+type KafkaServer struct {
+	Addrs    []KafkaAddr
+	MaxRetry int
+}
+
+// KafkaAddr
+type KafkaAddr struct {
+	Host string
+	Port int
+}
