@@ -57,12 +57,11 @@ type RPCClient struct {
 
 // KafkaServer options
 type KafkaServer struct {
-	Addrs    []KafkaAddr
+	Addrs    string
 	MaxRetry int
 }
 
-// KafkaAddr
-type KafkaAddr struct {
-	Host string
-	Port int
+type KafkaConsumer struct {
+	Group string
+	Num   int
 }
